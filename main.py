@@ -1,78 +1,32 @@
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
-from sklearn.base import BaseEstimator, TransformerMixin
-# from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from Model import Model
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, QuantileTransformer, StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.metrics import mean_absolute_error
 
 titanic_dataset = pd.read_csv('/home/okechukwu/Downloads/titanic competition/train.csv')
 titanic = titanic_dataset.drop('Cabin', axis=1)
-numeric_values = titanic.select_dtypes(include='number').columns.drop('Survived')
-object_values = titanic.select_dtypes(include='object').columns.drop(['Ticket', 'Name'])
-
-"""
-print(titanic.select_dtypes(include='object').drop(['Ticket', 'Name'], axis=1))
-impute = SimpleImputer(strategy='constant')
-no_null_cat = impute.fit_transform(titanic.select_dtypes(include='object').drop(['Ticket', 'Name'], axis=1))
-# ordinal_encoder = OrdinalEncoder()
-# cat_val = ordinal_encoder.fit_transform(no_null_cat)
-one_hot = OneHotEncoder()
-cat_val = one_hot.fit_transform(no_null_cat)
-print(cat_val.toarray())
-"""
-
-X = titanic.drop(['Survived', 'Ticket', 'Name'], axis=1)
+X = titanic.drop('Survived', axis=1)
 y = titanic.Survived
-
+numerics = X.select_dtypes(exclude=['object']).columns.drop(['PassengerId'])
+objects = X.select_dtypes(exclude=['number']).columns.drop(['Name', 'Ticket'])
+objects_2 = X.select_dtypes(exclude=['number']).columns.drop('Name')
 train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.2, random_state=42)
+# print(random_selection(train_X=train_X, train_y=train_y, test_X=test_X, test_y=test_y, model_pipeline=full_pipeline))
 
-# print(train_X.head())
-# print(train_y.head)
+decision_tree = Model(DecisionTreeRegressor, numeric_val=numerics, object_val=objects, random_state=True)
+history = decision_tree.fitting(trainer_x=train_X, trainer_y=train_y)
+print(test_X.ndim)
+mae = decision_tree.metrics(train_X, train_y, test_X, test_y)
+model = decision_tree.modelling()
 
-cat_pipe = Pipeline([
-    ('impute', SimpleImputer(strategy='constant')),
-    ('Encoder', OneHotEncoder())
-])
-
-num_pipe = Pipeline([
-    ('impute', SimpleImputer(strategy='mean')),
-    ('Scaler', MinMaxScaler()),
-    # ('Scaler', StandardScaler()),
-    # ('quantile', QuantileTransformer(n_quantiles=100, random_state=42))
-])
-
-preprocessing = ColumnTransformer([
-    ('numerical', num_pipe, numeric_values),
-    ('object', cat_pipe, object_values)
-])
-
-full_pipeline = Pipeline([
-    ('preprocessor', preprocessing),
-    ('model',DecisionTreeRegressor(max_leaf_nodes=500))
-])
-
-full_pipeline.fit(train_X, train_y)
-pred_y = full_pipeline.predict(test_X)
-# print(pred_y.shape, test_y.shape)
-mae = mean_absolute_error(y_true=test_y, y_pred=pred_y)
-print(mae)
-# print(test_y[50:51])
-# print(full_pipeline.predict(test_X[50:51]))
+# cross_val = decision_tree.cross_validation(model.fit(train_X,train_y), test_X, test_y)
+# print(cross_val)
+# print(mae)
 
 
-def random_selection(X, y):
-    first_num = np.random.randint(1, 100)
-    X = X[first_num:first_num+10]
-    y = y[first_num:first_num+10]
-    test_val = y
-    model_pred_val = full_pipeline.predict(X)
-    completion = f'Original_val:\n{test_val}, Predicted_val: {model_pred_val}'
-    return completion
-
-
-print(random_selection(X=test_X, y=test_y))
+tester_dataset = pd.read_csv('/home/okechukwu/Downloads/titanic competition/test.csv')
+tester = tester_dataset.copy()
+tester_labels = pd.read_csv('/home/okechukwu/Downloads/titanic competition/gender_submission.csv', index_col=0)
+processed = tester[['PassengerId', 'Pclass', 'Name', 'Sex', 'Age', 'SibSp', 'Parch', 'Ticket', 'Fare', 'Embarked']]
+mae2 = decision_tree.metrics(train_X, train_y, processed, tester_labels)
+print(f'test_set_mae: {mae2},\nvalidation_set_mae: {mae}')
