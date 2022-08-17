@@ -3,7 +3,6 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
 
 
@@ -36,7 +35,6 @@ class Model:
 
     def modelling(self):
         preprocessed = self.processing_types()
-        full_pipeline = None
         if self.random_state:
             full_pipeline = Pipeline([
                 ('preprocessed', preprocessed),
@@ -53,9 +51,13 @@ class Model:
         model = self.modelling()
         return model.fit(trainer_x, trainer_y)
 
-    def metrics(self, trainer_x, trainer_y, val_x, val_y):
-        model = self.fitting(trainer_x, trainer_y)
+    def predict(self, trainer_x, trainer_y, val_x):
+        model = self.fitting(trainer_x,trainer_y)
         pred_y = model.predict(val_x)
+        return pred_y
+
+    def metrics(self, trainer_x, trainer_y, val_x, val_y):
+        pred_y = self.predict(trainer_x, trainer_y, val_x)
         mae = mean_absolute_error(y_true=val_y, y_pred=pred_y)
         return mae
 

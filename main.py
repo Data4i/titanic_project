@@ -30,3 +30,8 @@ tester_labels = pd.read_csv('/home/okechukwu/Downloads/titanic competition/gende
 processed = tester[['PassengerId', 'Pclass', 'Name', 'Sex', 'Age', 'SibSp', 'Parch', 'Ticket', 'Fare', 'Embarked']]
 mae2 = decision_tree.metrics(train_X, train_y, processed, tester_labels)
 print(f'test_set_mae: {mae2},\nvalidation_set_mae: {mae}')
+y_pred = decision_tree.predict(train_X, train_y, processed)
+
+submission = pd.DataFrame({'Survived': y_pred}, index=tester_labels.index)
+submission = submission.astype(int)
+submission.to_csv("submission.csv")
